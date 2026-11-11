@@ -1,0 +1,82 @@
+name: Build Oracle Connector
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'plugin/trino-oracle/**'
+      - 'plugin/trino-base-jdbc/**'
+      - '.github/workflows/oracle-connector-build.yml'
+  pull_request:
+    paths:
+      - 'plugin/trino-oracle/**'
+      - 'plugin/trino-base-jdbc/**'
+      - '.github/workflows/oracle-connector-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+env:
+  CONTINUOUS_INTEGRATION: true
+  MAVEN_OPTS: "-Xmx3G -XX:+ExitOnOutOfMemoryError"
+  MAVEN_ARGS: "--global-settings ${{ github.workspace }}/.mvn/settings-ci.xml"
+  MVNW_REPOURL: "https://maven-central.storage-download.googleapis.com/maven2"
+
+concurrency:
+  group: oracle-connector-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-oracle-connector:
+    name: Build & Test Trino Oracle Connector
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+
+      - name: Build Oracle Connector and required dependencies
+        run: |
+          ./mvnw clean package \
+            -pl :trino-oracle -am \
+            -B -V -T 1C \
+            -DskipTests \
+            -Dmaven.source.skip=true \
+            -Dmaven.javadoc.skip=true \
+            -Dair.check.skip-all=true \
+            --no-transfer-progress
+
+      - name: Run Oracle Connector unit tests
+        run: |
+          ./mvnw surefire:test \
+            -pl :trino-oracle \
+            -B \
+            -Dair.check.skip-all=true \
+            -Dtest=TestOracleClient,TestOracleConfig,TestOraclePlugin \
+            --no-transfer-progress
+
+      - name: Upload Oracle Connector Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trino-oracle-connector
+          path: |
+            plugin/trino-oracle/target/trino-oracle-*.zip
+            plugin/trino-oracle/target/trino-oracle-*.jar
+          if-no-files-found: error
