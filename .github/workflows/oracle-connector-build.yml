@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Oracle Connector and required dependencies
         run: |
-          ./mvnw clean package \
+          ./mvnw clean install \
             -pl :trino-oracle -am \
             -B -V -T 1C \
             -DskipTests \
@@ -65,9 +65,11 @@ jobs:
 
       - name: Run Oracle Connector unit tests
         run: |
-          ./mvnw surefire:test \
+          ./mvnw test \
             -pl :trino-oracle \
             -B \
+            -Dmaven.source.skip=true \
+            -Dmaven.javadoc.skip=true \
             -Dair.check.skip-all=true \
             -Dtest=TestOracleClient,TestOracleConfig,TestOraclePlugin \
             --no-transfer-progress
