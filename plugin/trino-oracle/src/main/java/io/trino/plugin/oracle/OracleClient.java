@@ -722,7 +722,7 @@ public class OracleClient
     }
 
     @Override
-    public Optional<JdbcExpression> implementJoin(
+    public Optional<PreparedQuery> implementJoin(
             ConnectorSession session,
             JoinType joinType,
             PreparedQuery leftSource,
@@ -730,7 +730,6 @@ public class OracleClient
             PreparedQuery rightSource,
             Map<JdbcColumnHandle, String> rightProjections,
             List<ParameterizedExpression> joinConditions,
-            Map<ColumnHandle, String> assignments,
             JoinStatistics statistics)
     {
         return implementJoinCostAware(
@@ -739,7 +738,7 @@ public class OracleClient
                 leftSource,
                 rightSource,
                 statistics,
-                () -> super.implementJoin(session, joinType, leftSource, leftProjections, rightSource, rightProjections, joinConditions, assignments, statistics));
+                () -> super.implementJoin(session, joinType, leftSource, leftProjections, rightSource, rightProjections, joinConditions, statistics));
     }
 
     @Override
