@@ -5,12 +5,15 @@ on:
     branches:
       - master
       - main
+      - oracle-stats-connector
     paths:
+      - 'plugin/trino-oracle-stats/**'
       - 'plugin/trino-oracle/**'
       - 'plugin/trino-base-jdbc/**'
       - '.github/workflows/oracle-connector-build.yml'
   pull_request:
     paths:
+      - 'plugin/trino-oracle-stats/**'
       - 'plugin/trino-oracle/**'
       - 'plugin/trino-base-jdbc/**'
       - '.github/workflows/oracle-connector-build.yml'
@@ -35,7 +38,7 @@ concurrency:
 
 jobs:
   build-oracle-connector:
-    name: Build & Test Trino Oracle Connector
+    name: Build & Test Trino Oracle Stats Connector
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -52,10 +55,10 @@ jobs:
           java-version: '25'
           cache: 'maven'
 
-      - name: Build Oracle Connector and required dependencies
+      - name: Build Oracle Stats Connector and required dependencies
         run: |
           ./mvnw clean install \
-            -pl :trino-oracle -am \
+            -pl :trino-oracle-stats -am \
             -B -V -T 1C \
             -DskipTests \
             -Dmaven.source.skip=true \
@@ -63,22 +66,22 @@ jobs:
             -Dair.check.skip-all=true \
             --no-transfer-progress
 
-      - name: Run Oracle Connector unit tests
+      - name: Run Oracle Stats Connector unit tests
         run: |
           ./mvnw test \
-            -pl :trino-oracle \
+            -pl :trino-oracle-stats \
             -B \
             -Dmaven.source.skip=true \
             -Dmaven.javadoc.skip=true \
             -Dair.check.skip-all=true \
-            -Dtest=TestOracleClient,TestOracleConfig,TestOraclePlugin \
+            -Dtest=TestOracleClient,TestOracleConfig,TestOracleStatsPlugin \
             --no-transfer-progress
 
-      - name: Upload Oracle Connector Artifact
+      - name: Upload Oracle Stats Connector Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: trino-oracle-connector
+          name: trino-oracle-stats-connector
           path: |
-            plugin/trino-oracle/target/trino-oracle-*.zip
-            plugin/trino-oracle/target/trino-oracle-*.jar
+            plugin/trino-oracle-stats/target/trino-oracle-stats-*.zip
+            plugin/trino-oracle-stats/target/trino-oracle-stats-*.jar
           if-no-files-found: error
