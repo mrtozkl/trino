@@ -13,13 +13,60 @@
  */
 package io.trino.plugin.oracle;
 
-import io.trino.plugin.jdbc.JdbcPlugin;
+import com.google.common.collect.ImmutableList;
+import com.google.inject.Injector;
+import io.airlift.bootstrap.Bootstrap;
+import io.trino.plugin.base.ConnectorContextModule;
+import io.trino.plugin.jdbc.ExtraCredentialsBasedIdentityCacheMappingModule;
+import io.trino.plugin.jdbc.JdbcConnector;
+import io.trino.plugin.jdbc.JdbcModule;
+import io.trino.plugin.jdbc.credential.CredentialProviderModule;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.Connector;
+import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ConnectorFactory;
+
+import java.util.Map;
+
+import static io.airlift.configuration.ConfigurationAwareModule.combine;
+import static java.util.Objects.requireNonNull;
 
 public class OracleStatsPlugin
-        extends JdbcPlugin
+        implements Plugin
 {
-    public OracleStatsPlugin()
+    @Override
+    public Iterable<ConnectorFactory> getConnectorFactories()
     {
-        super("oracle_stats", OracleClientModule::new);
+        return ImmutableList.of(new ConnectorFactory()
+        {
+            @Override
+            public String getName()
+            {
+                return "oracle_stats";
+            }
+
+            @Override
+            public Connector create(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
+            {
+                requireNonNull(requiredConfig, "requiredConfig is null");
+
+                Bootstrap app = new Bootstrap(
+                        "io.trino.bootstrap.catalog." + catalogName,
+                        new ConnectorContextModule(catalogName, context),
+                        new JdbcModule(),
+                        combine(
+                                new CredentialProviderModule(),
+                                new ExtraCredentialsBasedIdentityCacheMappingModule(),
+                                new OracleClientModule()));
+
+                Injector injector = app
+                        .doNotInitializeLogging()
+                        .disableSystemProperties()
+                        .setRequiredConfigurationProperties(requiredConfig)
+                        .initialize();
+
+                return injector.getInstance(JdbcConnector.class);
+            }
+        });
     }
 }
