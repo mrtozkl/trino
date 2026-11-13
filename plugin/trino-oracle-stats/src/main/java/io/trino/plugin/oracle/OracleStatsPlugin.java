@@ -20,6 +20,6 @@ public class OracleStatsPlugin
 {
     public OracleStatsPlugin()
     {
-        super("oracle-stats", OracleClientModule::new);
+        super("oracle_stats", OracleClientModule::new);
     }
 }

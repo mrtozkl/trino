@@ -87,7 +87,7 @@ public final class OracleQueryRunner
                 queryRunner.createCatalog("tpch", "tpch");
 
                 queryRunner.installPlugin(new OracleStatsPlugin());
-                queryRunner.createCatalog("oracle", "oracle-stats", connectorProperties);
+                queryRunner.createCatalog("oracle", "oracle_stats", connectorProperties);
 
                 copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, initialTables);
 
